@@ -1,0 +1,72 @@
+# Build completa con la ROM vera (tutto su GitHub, niente tool locali).
+#
+# Avvio manuale: Actions -> build-with-rom -> Run workflow.
+# La ROM arriva dal secret ROM_B64 (base64 del .nes), viene decodificata nel
+# workspace effimero e MAI committata: nel repo restano solo codice + .vpk
+# come artifact. Richiede il secret ROM_B64 impostato (gh secret set ROM_B64).
+name: build-with-rom
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-rom-vita:
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:2026.08
+    steps:
+      - name: Checkout (con submodule nesrecomp)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Decodifica ROM dal secret
+        env:
+          ROM_B64: ${{ secrets.ROM_B64 }}
+        run: |
+          test -n "$ROM_B64" || { echo "Secret ROM_B64 mancante"; exit 1; }
+          echo "$ROM_B64" | base64 -d > DuckHunt.nes
+          ls -la DuckHunt.nes
+          python3 -c "import zlib,sys; d=open('DuckHunt.nes','rb').read(); assert d[:4]==b'NES\x1a', 'non e una ROM iNES'; crc=zlib.crc32(d[16:])&0xFFFFFFFF; print('size=%d crc32=%08X'%(len(d),crc)); sys.exit(0 if crc==0x24598791 else 1)"
+
+      - name: Toolchain info + SDL2 Vita
+        run: |
+          echo "VITASDK=$VITASDK"
+          arm-vita-eabi-gcc --version
+          (command -v cc) || { apt-get update && apt-get install -y gcc; }
+          cc --version
+          vdpm install sdl2 || (vdpm update && vdpm install sdl2)
+          ls "$VITASDK/arm-vita-eabi/include/SDL2/SDL.h"
+
+      - name: Compila il recompiler (host)
+        run: |
+          cmake -S nesrecomp/recompiler -B build/recompiler -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/recompiler
+
+      - name: Ricompila la ROM -> generated/
+        run: |
+          ./build/recompiler/NESRecomp "DuckHunt.nes" --game game.toml
+          ls -la generated/
+          test -f generated/duck-hunt_full.c
+          test -f generated/duck-hunt_dispatch.c
+
+      - name: Configura (Vita toolchain, codice vero)
+        run: |
+          cmake -S . -B build-vita \
+            -DCMAKE_TOOLCHAIN_FILE="$VITASDK/share/vita.toolchain.cmake" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Compila
+        run: cmake --build build-vita --verbose
+
+      - name: Verifica artefatti (.vpk + eboot)
+        run: |
+          ls -la build-vita
+          test -f build-vita/DuckHuntRecompVita.vpk || test -f build-vita/*.vpk
+          test -f build-vita/eboot.bin
+
+      - name: Upload .vpk (gioco vero)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuckHuntRecompVita-ROM-vpk
+          path: build-vita/*.vpk

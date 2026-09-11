@@ -90,6 +90,15 @@ target_compile_definitions(DuckHuntRecompVita PRIVATE
   RECOMP_STACK_TRACKING
   NESRECOMP_GAME_ZAPPER)
 
+# Il C generato e' un unico file enorme (tutto il gioco): con -O2/-O3 la
+# compilazione supera i 25 minuti su GitHub. -O1 la riduce a pochi minuti;
+# per un NROM minuscolo come Duck Hunt la differenza a runtime e' nulla.
+# Vale solo per il codice vero (mai per lo stub CI).
+if(NOT "${GENERATED_SRC}" MATCHES "stub_generated")
+  set_source_files_properties(${GENERATED_SRC} PROPERTIES COMPILE_OPTIONS "-O1")
+  message(STATUS "Codice generato vero: compilato con -O1 (build veloce)")
+endif()
+
 if(BUILD_VITA)
   # --- Flag VitaSDK ---------------------------------------------------------
   target_compile_definitions(DuckHuntRecompVita PRIVATE __VITA__=1 VITA=1)

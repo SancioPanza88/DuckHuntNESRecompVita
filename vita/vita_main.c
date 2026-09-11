@@ -20,6 +20,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <SDL.h>
+
+#ifdef __VITA__
+#include <psp2/power.h>
+#endif
+
 #include "game_extras.h"
 #include "nes_runtime.h"
 #include "crc32.h"
@@ -69,6 +75,18 @@ static int verify_rom_vita(const char *path, uint32_t expected) {
 int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     setvbuf(stdout, NULL, _IONBF, 0);
+
+#ifdef __VITA__
+    /* Clock al massimo (standard per gli homebrew): la CPU di default gira
+     * piu' bassa e il render software + NMI ne risentono. */
+    scePowerSetArmClockFrequency(444);
+    scePowerSetBusClockFrequency(222);
+    scePowerSetGpuClockFrequency(222);
+    scePowerSetGpuXbarClockFrequency(166);
+    /* Solo il touch FRONTALE deve sparare: ignora il pannello posteriore
+     * (letto da SDL-Vita all'init video, prima di SDL_Init nel runner). */
+    SDL_setenv("VITA_DISABLE_TOUCH_BACK", "1", 1);
+#endif
 
     /* Data dir scrivibile (ux0). */
     mkdir(VITA_DATA_DIR, 0777);

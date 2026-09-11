@@ -63,6 +63,7 @@ if(BUILD_VITA)
     vita/coroutine_vita.c
     vita/zapper_touch.c
     vita/vita_input.c
+    vita/perf_vita.c
     vita/vita_compat.c
     vita/vita_main.c)
 else()
@@ -74,6 +75,7 @@ else()
     vita/coroutine_vita.c
     vita/zapper_touch.c
     vita/vita_input.c
+    vita/perf_vita.c
     vita/vita_compat.c
     vita/vita_main.c)
 endif()
@@ -130,3 +132,4 @@ endif()
 if(NOT BUILD_VITA AND NOT MSVC)
   target_compile_options(DuckHuntRecompVita PRIVATE -Wno-implicit-function-declaration -Wno-implicit-int)
 endif()
+

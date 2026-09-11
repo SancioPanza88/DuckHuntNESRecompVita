@@ -17,6 +17,7 @@
  */
 #include "vita_input.h"
 #include "zapper_touch.h"
+#include "perf_vita.h"
 
 #include <SDL.h>
 
@@ -25,9 +26,12 @@ static float s_fx = 0.5f, s_fy = 0.5f;
 static int s_finger_down = 0;
 
 void vita_input_init(void) {
-    /* Gestiamo i touch a mano: niente emulazione mouse che sporca
-     * SDL_GetMouseState nel main_runner. */
-    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    /* Emulazione mouse ATTIVA (default SDL): il touch frontale genera eventi
+     * mouse e SDL_GetMouseState riflette dito giu'/su' come level (no race
+     * con il drain degli eventi del main_runner). Il pannello posteriore e'
+     * disabilitato in vita_main (VITA_DISABLE_TOUCH_BACK) cosi' solo il
+     * touch frontale mira/spara. */
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
 }
 
 int vita_input_poll_zapper(void) {
@@ -46,6 +50,7 @@ int vita_input_poll_zapper(void) {
                 s_fx = ev.tfinger.x;
                 s_fy = ev.tfinger.y;
                 s_finger_down = 1;
+                perf_note_finger();
                 zapper_touch_update(s_fx, s_fy, 1);
             }
         } else if (ev.type == SDL_FINGERUP) {

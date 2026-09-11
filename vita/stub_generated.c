@@ -46,8 +46,5 @@ int call_by_address_cb(uint16_t addr, int caller_bank) {
     (void)addr; (void)caller_bank;
     return 0;
 }
-
-int call_by_address_tail(uint16_t addr, int caller_bank) {
-    (void)addr; (void)caller_bank;
-    return 0;
-}
+/* NOTA: call_by_address_tail e' definita in runner/src/runtime.c,
+ * quindi lo stub NON la ridefinisce (multiple definition). */

@@ -63,6 +63,7 @@ if(BUILD_VITA)
     vita/coroutine_vita.c
     vita/zapper_touch.c
     vita/vita_input.c
+    vita/vita_compat.c
     vita/vita_main.c)
 else()
   # Build PC di sviluppo: riusa extras.c originale + launcher/coroutine upstream
@@ -73,6 +74,7 @@ else()
     vita/coroutine_vita.c
     vita/zapper_touch.c
     vita/vita_input.c
+    vita/vita_compat.c
     vita/vita_main.c)
 endif()
 
@@ -97,6 +99,7 @@ if(BUILD_VITA)
     SceDisplay_stub SceCtrl_stub SceTouch_stub SceAudio_stub
     SceGxm_stub SceCommonDialog_stub ScePower_stub SceHid_stub
     SceMotion_stub SceAppMgr_stub SceIofilemgr_stub
+    pthread
     m c)
 
   include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)

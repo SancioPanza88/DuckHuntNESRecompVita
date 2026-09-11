@@ -5,19 +5,20 @@
  * (RECOMP_LAUNCHER) + CRC + rebuild argv -> nesrecomp_runner_run().
  * Su Vita niente picker/GUI: la ROM (fornita dall'utente, non distribuita)
  * sta in un path fisso su ux0:data, verificata via CRC come su PC.
- * Facciamo chdir alla data-dir cosi' config.ini/keybinds.ini/savestates
- * (risolti come "./..." da nesrecomp_exe_dir che su Vita ritorna "./")
- * finiscono su memoria scrivibile invece che su app0: (read-only).
+ * Facciamo chdir alla data-dir con le API POSIX di newlib (mappate su
+ * SceIo) così config.ini/keybinds.ini/savestates (risolti come "./..."
+ * dal fallback di nesrecomp_exe_dir) finiscono su memoria scrivibile
+ * invece che su app0: (read-only).
+ *
+ * Fornisce anche i simboli che launcher.c definiva e main_runner.c usa:
+ * g_exe_dir[] e nesrecomp_expect_process_exit().
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
-#ifdef __VITA__
-#include <psp2/io/fcntl.h>
-#include <psp2/io/stat.h>
-#endif
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "game_extras.h"
 #include "nes_runtime.h"
@@ -25,6 +26,13 @@
 
 #define VITA_DATA_DIR "ux0:data/DUCKHUNT1/"
 #define VITA_ROM_PATH VITA_DATA_DIR "DuckHunt.nes"
+
+/* Simboli di launcher.c (escluso dalla build Vita): */
+char g_exe_dir[260] = VITA_DATA_DIR;
+
+void nesrecomp_expect_process_exit(void) {
+    /* No-op su Vita: niente diagnostica atexit come su PC. */
+}
 
 int nesrecomp_runner_run(int argc, char *argv[]);
 
@@ -62,11 +70,9 @@ int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     setvbuf(stdout, NULL, _IONBF, 0);
 
-#ifdef __VITA__
-    /* Data dir scrivibile (ux0). Ignoriamo errori: esiste dalla prima run. */
-    sceIoMkdir(VITA_DATA_DIR, 0777);
-    sceIoChdir(VITA_DATA_DIR);
-#endif
+    /* Data dir scrivibile (ux0). */
+    mkdir(VITA_DATA_DIR, 0777);
+    chdir(VITA_DATA_DIR);
 
     uint32_t expected = game_get_expected_crc32();
     const char *rom = VITA_ROM_PATH;

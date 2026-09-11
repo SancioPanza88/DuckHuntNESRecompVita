@@ -13,6 +13,20 @@ Toolchain: **VitaSDK** (`arm-vita-eabi-gcc`), SDL2 per Vita (vdpm).
 - La CI compila **senza ROM** (usa `vita/stub_generated.c`): prova il toolchain,
   non distribuisce materiale coperto da copyright.
 
+## Schermo nero? Leggi qui prima
+
+Il `.vpk` della CI è una **build di test senza gioco** (usa
+`vita/stub_generated.c`: niente ROM = niente codice). Mostra **barre
+colorate animate** tramite la vera pipeline SDL:
+
+- **Vedi le barre animate** → video OK. Per giocare devi ricompilare con il
+  codice generato dalla tua ROM (vedi "Uso reale" sotto): il CMake usa
+  `generated/` appena esistono `duck-hunt_full.c` + `duck-hunt_dispatch.c`.
+- **Resta nero anche con le barre attese** (cioè non vedi nemmeno quelle) →
+  problema nel renderer SDL Vita: apri una issue con modello Vita + firmware.
+- **L'app si chiude subito** → manca la ROM in
+  `ux0:data/DUCKHUNT1/DuckHunt.nes` (controlla il nome esatto, maiuscole incluse).
+
 ## Uso reale (con la tua ROM)
 
 1. Su **PC host**: genera il C ricompilato dalla tua `Duck Hunt (World).nes`

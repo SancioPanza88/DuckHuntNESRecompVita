@@ -14,6 +14,5 @@ generated/
 *.nes
 *.NES
 .DS_Store
-
-run1.log
+*.log
 undef.txt

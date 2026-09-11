@@ -1,0 +1,16 @@
+build/
+build-vita/
+build_pc/
+*.o
+*.a
+*.elf
+*.self
+*.velf
+*.vpk
+*.sfo
+eboot.bin
+param.sfo
+generated/
+*.nes
+*.NES
+.DS_Store

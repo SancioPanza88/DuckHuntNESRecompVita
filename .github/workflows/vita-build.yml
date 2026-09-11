@@ -1,0 +1,50 @@
+name: vita-build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-vita:
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:2026.08
+    steps:
+      - name: Checkout (con submodule nesrecomp)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Info toolchain
+        run: |
+          echo "VITASDK=$VITASDK"
+          arm-vita-eabi-gcc --version
+          vdpm status || true
+
+      - name: Installa SDL2 per Vita (vdpm)
+        run: |
+          vdpm install sdl2 || (vdpm update && vdpm install sdl2)
+          ls "$VITASDK/arm-vita-eabi/include/SDL2/SDL.h"
+
+      - name: Configura (Vita toolchain)
+        run: |
+          cmake -S . -B build-vita \
+            -DCMAKE_TOOLCHAIN_FILE="$VITASDK/share/vita.toolchain.cmake" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Compila
+        run: cmake --build build-vita --verbose
+
+      - name: Verifica artefatti (.vpk + eboot)
+        run: |
+          ls -la build-vita
+          test -f build-vita/DuckHuntRecompVita.vpk || test -f build-vita/*.vpk
+          test -f build-vita/eboot.bin
+
+      - name: Upload .vpk
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuckHuntRecompVita-vpk
+          path: build-vita/*.vpk
